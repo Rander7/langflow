@@ -6,6 +6,7 @@ from lfx.base.vectorstores.model import LCVectorStoreComponent, check_cached_vec
 from lfx.helpers.data import docs_to_data
 from lfx.io import BoolInput, HandleInput, IntInput, StrInput
 from lfx.schema.data import Data
+from lfx.utils.file_path_security import enforce_local_file_access
 
 
 class FaissVectorStoreComponent(LCVectorStoreComponent):
@@ -58,9 +59,14 @@ class FaissVectorStoreComponent(LCVectorStoreComponent):
         return str(Path(path).resolve())
 
     def get_persist_directory(self) -> Path:
-        """Returns the resolved persist directory path or the current directory if not set."""
+        """Returns the resolved persist directory path or the current directory if not set.
+
+        When LANGFLOW_RESTRICT_LOCAL_FILE_ACCESS is on, the resolved path is confined to the
+        storage dir so a tenant cannot read/write the FAISS index (and its pickle sidecar) at an
+        arbitrary host path. No-op by default.
+        """
         if self.persist_directory:
-            return Path(self.resolve_path(self.persist_directory))
+            return enforce_local_file_access(self.resolve_path(self.persist_directory))
         return Path()
 
     @check_cached_vector_store

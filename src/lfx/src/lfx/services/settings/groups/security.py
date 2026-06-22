@@ -112,6 +112,24 @@ class SecuritySettings(BaseModel):
     Defaults to False to preserve existing single-tenant behavior, where reading local server
     files by absolute path is a legitimate feature."""
 
+    mcp_server_docker_hardening: bool = False
+    """If set to True, applies a strict docker-argument policy to MCP stdio servers (both
+    flow-embedded configs and the ``/api/v2/mcp/servers`` REST endpoint).
+
+    ``docker`` is an allowed MCP transport, but flags like ``-v /:/host`` (mount the host
+    filesystem), ``-v /var/run/docker.sock:/s`` (Docker-API root), ``--device``, ``--network
+    host``, and ``--privileged`` turn a container run into host access. With the default (False)
+    only ``--privileged`` / ``--cap-add`` and the host-namespace ``=`` forms are blocked, which
+    preserves existing single-tenant behavior where docker MCP servers legitimately use volume
+    mounts and custom networks.
+
+    Multi-tenant / untrusted-tenant deployments should set this to True (alongside
+    ``LANGFLOW_ALLOW_CUSTOM_COMPONENTS=false``): host filesystem/device mounts and privilege flags
+    are then rejected outright, host/another-container namespaces and non-default networks are
+    rejected, and ``--security-opt`` is rejected only when it disables the sandbox. Benign forms
+    (no flags, ``--user``, ``--network none``/``bridge``, ``--security-opt no-new-privileges``)
+    stay allowed."""
+
     # Rate Limiting
     rate_limit_enabled: bool = True
     """Enable rate limiting for login endpoint. Set to False to disable (useful for testing)."""
